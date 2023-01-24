@@ -4,8 +4,9 @@ from rest_framework import views
 from django.shortcuts import get_object_or_404
 from rest_framework.status import *
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from accounts.models import *
+from urllib import parse
 
 
 class dictionaryView(views.APIView):
@@ -54,7 +55,6 @@ class postListView(views.APIView):
         serializer = postSerializer(data=request.data)
 
         if serializer.is_valid():
-            serializer.stack += 1
             serializer.save(dictionary=postmake)
             return Response({'message': '정의 적기 성공', 'data': serializer.data}, status=HTTP_200_OK)
         return Response({'message': '정의 적기 실패', 'data': serializer.errors}, status=HTTP_400_BAD_REQUEST)
@@ -76,28 +76,27 @@ class postDeleteView(views.APIView):
 
 class postLikeView(views.APIView):
     serializer_class = postSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
-    def postlike(self, request, pk, post_pk):
-        user = request.accounts
+    def post(self, request, pk, post_pk):
+        postmake = get_object_or_404(dictionary, pk=pk)
         post_like = get_object_or_404(post, pk=post_pk)
         post_like.is_liked = True
-        post_like.like += 1
+        post_like.likes += 1
 
         serializer = self.serializer_class(
             data=request.data, instance=post_like, partial=True)
 
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(dictionary=postmake)
             return Response({'message': '정의 좋아요 성공', 'data': serializer.data}, status=HTTP_200_OK)
         else:
             return Response({'message': '정의 좋아요 실패', 'data': serializer.errors}, status=HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, post_pk):
-        user = request.accounts
         post_like = get_object_or_404(post, pk=post_pk)
         post_like.is_liked = False
-        post_like.like -= 1
+        post_like.likes -= 1
 
         serializer = self.serializer_class(
             data=request.data, instance=post_like, partial=True)
@@ -135,7 +134,6 @@ class NicknameListView(views.APIView):
         nicknamemake = get_object_or_404(dictionary, pk=pk)
         serializer = NickNameSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.people += 1
             serializer.save(dictionary=nicknamemake)
             return Response({'message': '닉네임 생성 성공', 'data': serializer.data}, status=HTTP_200_OK)
         return Response({'message': '닉네임 생성 실패', 'data': serializer.errors}, status=HTTP_400_BAD_REQUEST)
@@ -144,11 +142,11 @@ class NicknameListView(views.APIView):
 class SearchView(views.APIView):
     serializer_class = dictionaryListSerializer
 
-    def get(self, request):
+    def get(self, request, **kwargs):
         keyword = request.GET.get('keyword')
 
-        if not keyword:
-            keyword = ""
+        if request.GET.get(keyword)!=None:
+            parse.unquote(request.GET.get(keyword))
         dictionarys = dictionary.objects.filter(firstName__contains=keyword)
         serializer = self.serializer_class(dictionarys, many=True)
 

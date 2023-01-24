@@ -14,10 +14,11 @@ class dictionary(models.Model):
 
 
 class post(models.Model):
-    nickname = models.CharField(max_length=30, null=False, default="행인")
+    nickname = models.CharField(max_length=30, null=False, default="")
     consonant = models.CharField(max_length=10)
     contents = models.TextField()
-    like = models.PositiveBigIntegerField(null=True)
+    like = models.ManyToManyField(User, related_name='posts', blank=True)
+    likes = models.BigIntegerField(default=0, null=True)
     dictionary = models.ForeignKey(
         dictionary, on_delete=models.CASCADE, related_name='post')
-    stack = models.PositiveBigIntegerField(null=True)
+    is_liked = models.BooleanField(default=False)
