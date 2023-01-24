@@ -1,5 +1,16 @@
+
+from django.shortcuts import render
 from django.shortcuts import get_object_or_404
-from django.contrib.auth import logout, login
+from .serializers import *
+from .models import *
+from rest_framework.status import *
+from rest_framework import views
+from rest_framework.response import Response
+
+import jwt
+import datetime
+from rest_framework.renderers import JSONRenderer
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework import views
 from rest_framework.status import *
 from rest_framework.response import Response
@@ -10,7 +21,7 @@ from .serializers import *
 
 
 class SignUpView(views.APIView):
-    serializer_class = SignUpSerializer
+    serializer_class = UserSerializer
 
     def post(self, request, format=None):
         serializer = self.serializer_class(data=request.data)
